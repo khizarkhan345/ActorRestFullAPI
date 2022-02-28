@@ -2,6 +2,7 @@ const express = require('express');
 const  mongoose = require('mongoose');
 const router = express.Router();
 const Actor = require('../models/actor');
+const checkAuth = require('../middleware/check-auth');
 
 router.get('/', (req, res, next) => {
    
@@ -11,18 +12,19 @@ router.get('/', (req, res, next) => {
      .then(result => {
          const response = {
              count: result.length,
-             actor: result.map(res => {
-               return {
-                   name: res.name,
-                   age: res.age,
-                   gender: res.gender,
-                   _id: res._id,
-                   request: {
-                       type: 'GET',
-                       url: 'http://localhost:3000/actors/' + res._id
-                   }
-               }
-             }) 
+             actor: result
+            //  result.map(res => {
+            //    return {
+            //        name: res.name,
+            //        age: res.age,
+            //        gender: res.gender,
+            //        _id: res._id,
+            //        request: {
+            //            type: 'GET',
+            //            url: 'http://localhost:3000/actors/' + res._id
+            //        }
+            //    }
+            //  }) 
 
          }
          res.status(201).json(response)
@@ -65,7 +67,7 @@ router.post('/', (req, res, next) => {
     });
 
 });
-router.get('/:id', (req, res, next) => {
+router.get('/:id', checkAuth, (req, res, next) => {
     const id = req.params.id;
     
     Actor.findById(id)
@@ -114,26 +116,27 @@ router.patch('/:id', (req, res, next) => {
 })
 
 
-router.delete('/:id', (req, res, next) => {
-    const id = req.params.id;
+// router.delete('/:id', (req, res, next) => {
+//     const id = req.params.id;
    
-    Actor.remove({_id: id})
-    .exec()
-    .then(result => {
-        res.status(200).json({
-            message: 'Actor Deleted!',
-            request: {
-                type: 'POST',
-                url: 'http://localhost:3000/actors/',
-                data: {name: 'String', age: 'Number', gener: 'String'}
-            }
-        })
-    })
-    .catch(err => {
-        console.log(err)
-        res.status(500).json({
-            error: err
-        })
-    })
-})
+//     Actor.remove({_id: id})
+//     .exec()
+//     .then(result => {
+//         res.status(200).json({
+//             message: 'Actor Deleted!',
+//             request: {
+//                 type: 'POST',
+//                 url: 'http://localhost:3000/actors/',
+//                 data: {name: 'String', age: 'Number', gener: 'String'}
+//             }
+//         })
+//     })
+//     .catch(err => {
+//         console.log(err)
+//         res.status(500).json({
+//             error: err
+//         })
+//     })
+// })
+
 module.exports = router;
