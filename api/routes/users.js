@@ -46,7 +46,7 @@ router.post('/signup', (req, res, next) => {
                 }
             })
         }
-    })
+    }) 
 });
   // Login request
   router.post('/login', (req, res, next) => {

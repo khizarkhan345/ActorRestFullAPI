@@ -8,13 +8,7 @@ const actorRoutes = require('./api/routes/actors');
 const movieRoutes = require('./api/routes/movies');
 const userRoutes = require('./api/routes/users');
 
-mongoose.connect("mongodb+srv://khizar123:england123@api-mongodb.88z8c.mongodb.net/myFirstDatabase?retryWrites=true&w=majority" 
-
-// {
-//    useMongoClient: true
-// }
-
-);
+mongoose.connect();
 
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({extended: false}));
