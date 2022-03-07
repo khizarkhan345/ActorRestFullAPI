@@ -6,8 +6,9 @@ const movieSchema = mongoose.Schema({
     genre: {type: String, required: true},
     actors: [{type: mongoose.Schema.Types.ObjectId, ref: 'Actor'}],
     business_done: {type: Number, required: true},
+    movieImage: {type: String},
     reviews: [{type: String}],
-    Rating: {type: Number}
+    Rating: {type: Number} 
 });
 
 module.exports = mongoose.model('Movie', movieSchema);

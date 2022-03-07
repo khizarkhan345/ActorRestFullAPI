@@ -1,13 +1,37 @@
 const express = require('express');
 const  mongoose = require('mongoose');
 const router = express.Router();
+const multer = require('multer');
+
+const storage = multer.diskStorage({
+    destination: function(req, file, cb){
+       cb(null, './actorImages');
+    },
+    filename: function(req, file, cb) {
+        cb(null, new Date().toISOString().replace(/:/g, '-') + file.originalname);
+    }
+}); 
+
+const fileFilter = (req, file, cb) => {
+    if(file.mimetype === 'image/jpeg' || file.mimetype === 'image/png'){
+        cb(null, true);
+    }else{
+        cb(null, false);
+    }
+}
+
+const upload = multer({storage: storage, fileFilter: fileFilter});
+
+
+
+
 const Actor = require('../models/actor');
 const checkAuth = require('../middleware/check-auth');
 
 router.get('/', (req, res, next) => {
    
      Actor.find()
-     .select('name age gender _id')
+     .select('name age gender actorImage _id')
      .exec()
      .then(result => {
          const response = {
@@ -30,19 +54,21 @@ router.get('/', (req, res, next) => {
          res.status(201).json(response)
      })
      .catch(err => {
+         console.log(error);
          res.status(500).json({
              error: err
          })
      })
 });
 
-router.post('/', (req, res, next) => {
+router.post('/', upload.any('actorImage'), (req, res, next) => {
 
     const actor = new Actor({
         _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
         age: req.body.age,
-        gender: req.body.gender
+        gender: req.body.gender,
+        actorImage: req.files[0].path
     })
     actor.save()
     .then(result => {
@@ -53,6 +79,7 @@ router.post('/', (req, res, next) => {
                 name: result.name,
                 age: result.age,
                 gender: result.gender,
+                actorImage: result.actorImage,
                 request: {
                     type: 'POST',
                     url: 'http://localhost:3000/actors/' + result._id
@@ -67,11 +94,11 @@ router.post('/', (req, res, next) => {
     });
 
 });
-router.get('/:id', checkAuth, (req, res, next) => {
+router.get('/:id',  (req, res, next) => {
     const id = req.params.id;
     
     Actor.findById(id)
-    .select('name age gender _id')
+    .select('name age gender actorImage _id')
     .exec()
     .then(result => {
         console.log("from database", result)

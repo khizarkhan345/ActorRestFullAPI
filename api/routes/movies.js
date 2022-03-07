@@ -1,14 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const multer = require('multer');
+
+const storage = multer.diskStorage({
+    destination: function(req, file, cb){
+       cb(null, './uploads');
+    },
+    filename: function(req, file, cb) {
+        cb(null, new Date().toISOString().replace(/:/g, '-') + file.originalname);
+    }
+}); 
+
+const upload = multer({storage: storage});
+
 
 const Movie = require('../models/movie');
 const Actor = require('../models/actor');
 const checkAuth = require('../middleware/check-auth');
 
-router.get('/', checkAuth, (req, res, next) => {
+router.get('/', (req, res, next) => {
     Movie.find()
-        .select('name genre actors business_done reviews Rating _id ')
+        .select('name genre actors movieImage business_done reviews Rating _id ')
         .populate('actors')
         .exec()
         .then(result => {
@@ -18,13 +31,15 @@ router.get('/', checkAuth, (req, res, next) => {
                     return {
                         name: res.name,
                         genre: res.genre,
+                        actor: res.actors,
+                        movieImage: res.movieImage,
                         business_done: res.business_done,
                         reviews: res.reviews.map(result => {
                             return result
                         }),
                         rating: res.Rating,
                         _id: res._id,
-                        request: {
+                        request: { 
                             type: 'GET',
                             url: 'http://localhost:3000/movies/' + res._id
                         }
@@ -42,8 +57,11 @@ router.get('/', checkAuth, (req, res, next) => {
         })
 });
 
-router.post('/', checkAuth, (req, res, next) => {
-    req.body.actorID.map(result => {
+router.post('/', upload.any('movieImage'), (req, res, next) => {
+    console.log(req.files[0].path); 
+    actor = JSON.parse(req.body.actorID);
+    actor.map(result => { 
+        console.log(result)
         Actor.findById(result)
             .then(actor => {
                 if (!actor) {
@@ -55,7 +73,8 @@ router.post('/', checkAuth, (req, res, next) => {
                     _id: mongoose.Types.ObjectId(),
                     name: req.body.name,
                     genre: req.body.genre,
-                    actors: req.body.actorID,
+                    actors: result,//mongoose.Types.ObjectId(result),
+                    movieImage: req.files[0].path,
                     business_done: req.body.business_done,
                     reviews: req.body.reviews,
                     Rating: req.body.rating
@@ -64,11 +83,13 @@ router.post('/', checkAuth, (req, res, next) => {
             })
             .then(result => {
                 res.status(201).json({
+    
                     message: 'Movie created successfully!',
                     actor: {
                         name: result.name,
                         genre: result.genre,
                         actors: result.actors,
+                        movieImage: result.movieImage,
                         business_done: result.business_done,
                         reviews: result.reviews,
                         rating: result.rating,
@@ -77,24 +98,25 @@ router.post('/', checkAuth, (req, res, next) => {
                             url: 'http://localhost:3000/movies/' + result._id
                         }
                     }
+                
                 })
             })
             .catch(err => {
                 console.log(err)
-                res.status(500).json(
+                return res.status(500).json(
                     {   
                     error: err
                 })
             })
-    })
+    }) 
 
 });
 
-router.get('/:id', checkAuth, (req, res, next) => {
+router.get('/:id',  (req, res, next) => {
     const id = req.params.id;
 
     Movie.findById(id)
-        .select('name genre actors business_done reviews Rating _id')
+        .select('name genre actors movieImage business_done reviews Rating _id')
         .populate('actors')
         .exec()
         .then(result => {
@@ -143,7 +165,7 @@ router.patch('/:id', checkAuth, (req, res, next) => {
 })
 
 
-router.delete('/:id', checkAuth, (req, res, next) => {
+router.delete('/:id',  (req, res, next) => {
     const id = req.params.id;
 
 
