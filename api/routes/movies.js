@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const multer = require('multer');
+const json3 = require('json3');
+const fs = require('fs');
+
+
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb){
@@ -19,12 +23,59 @@ const Movie = require('../models/movie');
 const Actor = require('../models/actor');
 const checkAuth = require('../middleware/check-auth');
 
+router.get('/csvData', (req, res, next) => {
+    Movie.find()
+    .select('name genre actors movieImage business_done reviews Rating _id ')
+    .populate('actors')
+    .exec()
+    .then(result => {
+       // console.log(result);
+       //console.log(result[1]);
+      // result1 = JSON.stringify(result);
+      var header = ["_id", "name", "genre", "actors", "movieImage", "business_done", "reviews", "Rating"];
+        
+      
+       //console.log(result);
+        //const header = Object.keys(result[0]);
+        // console.log(header);
+            const replacer = (key, value) => value === null ? '' : value;
+            var csv = result.map(function(row){
+               return header.map(function(fieldName){
+                    return JSON.stringify(row[fieldName], replacer)
+               }).join(",")
+                 })
+            csv.unshift(header.join(',')) // add header column
+            //csv = csv.join('\r\n');
+            // let csv = result.map(row => header.map(fieldName => 
+            // JSON.stringify(row[fieldName], replacer).replace(/\\"/g, '""')).join(','))
+            // csv.unshift(header.join(','))
+            csv = csv.join("\r\n");
+        // const items = result
+        // const replacer = (key, value) => value === null ? '' : value // specify how you want to handle null values here
+        // //const header = Object.keys(items[0])
+        // const csv = [
+        //     header.join(','), // header row first
+        //     ...items.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer).replace(/\\"/g, '""')).join(','))
+        // ].join('\r\n')
+      
+         fs.writeFileSync('data1.csv', csv);
+        
+        return res.status(200).json({
+            message: "Data has been downloaded successfully"
+        })
+         
+        }).catch((err) => {
+                    res.status(400).json({error: "Something went wrong while fetching data"})
+                })
+})
+
 router.get('/', (req, res, next) => {
     Movie.find()
-        .select('name genre actors movieImage business_done reviews Rating _id ')
-        .populate('actors')
-        .exec()
-        .then(result => {
+    .select('name genre actors movieImage business_done reviews Rating _id ')
+    .populate('actors')
+    .exec()
+    .then(result => {
+        
             const response = {
                 count: result.length,
                  movie:  result.map(res => {

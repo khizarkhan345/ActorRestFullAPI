@@ -1,7 +1,10 @@
+const fetch = require('node-fetch');
 const express = require('express');
 const  mongoose = require('mongoose');
 const router = express.Router();
 const multer = require('multer');
+const request = require('request');
+
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb){
@@ -166,4 +169,30 @@ router.patch('/:id', (req, res, next) => {
 //     })
 // })
 
+router.get('/api', (req, res, next) => {
+   const BASE_URL = 'https://dummyapi.io/data/v1/user';
+   const APP_ID = '62274c2860e20716465b1652';
+
+   
+//    request({url: BASE_URL, header: {'app-id': APP_ID}}, (error, response) => {
+//        if(error){
+//            console.log(error);
+//            return res.status(401).json({
+//                res: "Something went wrong while fetching API data"
+//            })
+//        }
+
+//        console.log(response);
+//    })
+   
+   const response = fetch(BASE_URL, {
+    method: 'get',
+    body: JSON.stringify(body),
+    headers: {'Content-Type': 'application/json'}
+   });
+   const data = response.json();
+
+    console.log(data); 
+   
+})
 module.exports = router;

@@ -11,6 +11,7 @@ const actorSchema = mongoose.Schema({
          },
     phoneNo: {type: Number, required: true},
     password: {type: String, required: true},
+    resetLink: {data: String, default: ''}
 });
 
 module.exports = mongoose.model('User', actorSchema);
