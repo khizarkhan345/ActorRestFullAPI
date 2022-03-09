@@ -5,8 +5,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const lodash = require('lodash');
 const mailgun = require("mailgun-js");
-const DOMAIN = "sandboxb750afcbf67c432986bb6bf51a16d95c.mailgun.org";
-const mg = mailgun({apiKey: "b66ab8414b344c7c41d1d0936731b7c3-1b237f8b-c4e19a59", domain: DOMAIN});
+const nodeMailer = require('nodemailer');
+
 
 const Movie = require('../models/movie');
 const Actor = require('../models/actor');
@@ -24,25 +24,56 @@ router.post('/signup', (req, res, next) => {
 
             const token = jwt.sign({name: req.body.name, email: req.body.email, password: req.body.password, phoneNO: req.body.phoneNo}, 'secret', {expiresIn: "20m"})
 
-            const data = {
-                from: "noreply@test.com",
-                to: req.body.email,
-                subject: "Account activation Link",
-                html: `
-                 <h2>Kindly, click on the following link to activate your account</h2>
-                 <a>http://localhost:3000/users/activate/${token}</a>
-                `
-            };
-            mg.messages().send(data, function (error, body) {
-                if(error){
-                    return res.json({error: err})
-                }else{
-                    return res.json({message: "Email has been sent to client. Kindly, verify it"});
-                }
-                console.log(body);
-            });
+            // const data = {
+            //     from: "noreply@test.com",
+            //     to: req.body.email,
+            //     subject: "Account activation Link",
+            //     html: `
+            //      <h2>Kindly, click on the following link to activate your account</h2>
+            //      <a>http://localhost:3000/users/activate/${token}</a>
+            //     `
+            // };
+            // mg.messages().send(data, function (error, body) {
+            //     if(error){
+            //         return res.json({error: error})
+            //     }else{
+            //         return res.json({message: "Email has been sent to client. Kindly, verify it"});
+            //     }
+            //     console.log(body);
+            // });
             
+            let testAccount = await nodeMailer.createTestAccount();
+            console.log(testAccount);
+            let data = {
+                from: '"Fred Foo 👻" <foo@example.com>', // sender address
+                  to: req.body.email, // list of receivers
+                subject: "Hello ✔", // Subject line
+                text: "Hello world?", // plain text body
+                html: "<b>Hello world?</b>", // html body
+               }
+  // create reusable transporter object using the default SMTP transport
+           let transporter = nodeMailer.createTransport({
+               host: "smtp.ethereal.email",
+               port: 587,
+              secure: false, // true for 465, false for other ports
+             auth: {
+                 user: testAccount.user, // generated ethereal user
+                 pass: testAccount.pass, // generated ethereal password
+           },
+        });
 
+  // send mail with defined transport object
+             transporter.sendMail(data, function (error, body) {
+                    if(error){
+                        console.log(error);
+                        return res.json({error: error})
+                    }else{
+                        return res.json({message: "Email has been sent to client. Kindly, verify it"});
+                    }
+                    console.log(body);
+                });
+
+                 
             // bcrypt.hash(req.body.password, 10, (err, hash) => {
             //     if(err) {
             //         return res.status(500).json({
@@ -237,7 +268,7 @@ router.put('/reset-password', (req, res, next) => {
            }
            User.findOne({resetLink: req.body.resetLink})
            .then((result) => {
-            
+        
             bcrypt.hash(req.body.newPass, 10, (err, hash) => {
                 if(err){
                   return res.status(401).json({

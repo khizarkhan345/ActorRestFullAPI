@@ -1,10 +1,10 @@
-const fetch = require('node-fetch');
+//const fetch = require('node-fetch');
 const express = require('express');
 const  mongoose = require('mongoose');
 const router = express.Router();
 const multer = require('multer');
 const request = require('request');
-
+const Axios = require('axios');
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb){
@@ -30,6 +30,7 @@ const upload = multer({storage: storage, fileFilter: fileFilter});
 
 const Actor = require('../models/actor');
 const checkAuth = require('../middleware/check-auth');
+const { response } = require('express');
 
 router.get('/', (req, res, next) => {
    
@@ -97,6 +98,94 @@ router.post('/', upload.any('actorImage'), (req, res, next) => {
     });
 
 });
+
+router.get('/user', (req, res, next) => {
+    const BASE_URL = 'https://dummyapi.io/data/v1';
+    const APP_ID = "62284ded07de6e965b4a8845";
+ 
+
+    Axios({
+        method: 'get',
+        url: `${BASE_URL}/user?limit=100`,
+        headers: {'app-id': APP_ID}
+    })
+    .then((response) => {
+          //console.log(response.data)
+          const data = response.data['data'];
+          const new_data = [];
+          //console.log(data[0].title);
+           data.forEach((d) => {
+               const name = d.firstName + ' ' + d.lastName;
+               const gender = d.title === 'mr' ? 'Male': 'Female';
+               const age = 25;
+               const actorImage = d.picture;
+               new_data.push({name: name, age: age, gender: gender, actorImage: actorImage});
+
+            //    const actor = new Actor({
+            //     _id: new mongoose.Types.ObjectId(),
+            //     name: name,
+            //     age: age,
+            //     gender: gender,
+            //     actorImage: actorImage
+            // })
+            // actor.save()
+            // .then(result => {
+        
+            //     res.status(201).json({
+            //         message: 'Actor created successfully! from API',
+            //     })
+            // }).catch(err => {
+            //     console.log(err)
+            //     res.status(500).json({
+            //         error: err
+            //     })
+            // });
+           })
+           console.log(new_data);
+           new_data.forEach((dat) => {
+                   const actor = new Actor({
+                _id: new mongoose.Types.ObjectId(),
+                name: dat.name,
+                age: dat.age,
+                gender: dat.gender,
+                actorImage: dat.actorImage
+            })
+            actor.save()
+            .then(result => {
+        
+                res.status(201).json({
+                    message: 'Actor created successfully! from API',
+                })
+            }).catch(err => {
+                console.log(err)
+                res.status(500).json({
+                    error: err
+                })
+            });
+           }) 
+          return res.status(200).json({
+              message: "Data fetched"
+          })
+        })
+        .catch((err) => {
+            console.log("Error occured")
+         console.log(err);
+         return res.status(400).json({
+            message: "Error occured"
+        })
+        })
+    // Axios.get(`${BASE_URL}/user?limit=10`, {headers: {'APP_ID': APP_ID}})
+    // .then((response) => {
+    //   console.log(response)
+    // })
+    // .catch((err) => {
+    //     console.log("Error occured")
+    //  console.log(err);
+    // })
+    
+    
+ })
+
 router.get('/:id',  (req, res, next) => {
     const id = req.params.id;
     
@@ -169,30 +258,5 @@ router.patch('/:id', (req, res, next) => {
 //     })
 // })
 
-router.get('/api', (req, res, next) => {
-   const BASE_URL = 'https://dummyapi.io/data/v1/user';
-   const APP_ID = '62274c2860e20716465b1652';
 
-   
-//    request({url: BASE_URL, header: {'app-id': APP_ID}}, (error, response) => {
-//        if(error){
-//            console.log(error);
-//            return res.status(401).json({
-//                res: "Something went wrong while fetching API data"
-//            })
-//        }
-
-//        console.log(response);
-//    })
-   
-   const response = fetch(BASE_URL, {
-    method: 'get',
-    body: JSON.stringify(body),
-    headers: {'Content-Type': 'application/json'}
-   });
-   const data = response.json();
-
-    console.log(data); 
-   
-})
 module.exports = router;
