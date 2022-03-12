@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 const firebaseAdmin = require("firebase-admin");
-
-var serviceAccount = require("./serviceAccountKey.json");
+const path = require("path");
+var serviceAccount = require("../../serviceAccountKey.json");
 
 app = firebaseAdmin.initializeApp({
   credential: firebaseAdmin.credential.cert(serviceAccount)

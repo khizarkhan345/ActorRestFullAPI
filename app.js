@@ -14,7 +14,6 @@ const actorRoutes = require('./api/routes/actors');
 const movieRoutes = require('./api/routes/movies');
 const userRoutes = require('./api/routes/users');
 
-console.log("mongodb+srv://khizar123:"+process.env.MONGODB_PASSWORD+"@api-mongodb.88z8c.mongodb.net/myFirstDatabase?retryWrites=true&w=majority");
 
 let connection = mongoose.connect("mongodb+srv://khizar123:"+process.env.MONGODB_PASSWORD+"@api-mongodb.88z8c.mongodb.net/myFirstDatabase?retryWrites=true&w=majority" 
 ); 
@@ -35,17 +34,7 @@ app.use(bodyParser.urlencoded({extended: false}));
 //app.use(formidable());
 app.use(bodyParser.json());
 
-const config = {
-    authRequired: false,
-    auth0Logout: true,
-    secret: 'TnS4MbRUSHhlclBUk0s7niqP9zlaXFGJDBORSIF4RHc6U-_uQUq-HkxSPuks2NOR',
-    baseURL: 'http://localhost:3000',
-    clientID: 'DmwMeGcpEIBFEWOpMlAkGw9jeT2lmsCV',
-    issuerBaseURL: 'https://dev-4h1xk-tf.us.auth0.com'
-  };
-  
-  // auth router attaches /login, /logout, and /callback routes to the baseURL
-app.use(auth(config));
+
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*")
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Authorization");
