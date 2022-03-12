@@ -59,13 +59,13 @@ router.post('/signup', (req, res, next) => {
                
               //secure: false, // true for 465, false for other ports
              auth: {
-                 user: 'khankhizar98018@gmail.com', // generated ethereal user
-                 pass: 'england345#', // generated ethereal password
+                 user: process.env.EMAIL, // generated ethereal user
+                 pass: process.env.EMAIL_PASSWORD, // generated ethereal password
            },
         });
          console.log(transporter);
          let data = {
-            from: "khankhizar98018@gmail.com", // sender address
+            from: process.env.EMAIL, // sender address
               to: req.body.email, // list of receivers
             subject: "Hello ✔", // Subject line
             text: "Hello world?", // plain text body
@@ -164,29 +164,6 @@ router.post('/signup', (req, res, next) => {
           })
       })
   });
-
-router.post('/userlogin', (req, res) => {
-    
-    // var webAuth = new auth0.WebAuth({
-    //     domain:       'dev-4h1xk-tf.us.auth0.com',
-    //     clientID:     'DmwMeGcpEIBFEWOpMlAkGw9jeT2lmsCV'
-    //   });
-    
-    //   // Calculate URL to redirect to
-    //   var url = webAuth.client.buildAuthorizeUrl({
-    //     clientID: 'DmwMeGcpEIBFEWOpMlAkGw9jeT2lmsCV', // string
-    //     responseType: 'token', // code or token
-    //     connection: User,
-    //     redirectUri: 'undefined',
-    //     scope: 'openid profile email',
-    //     //state: 'YOUR_STATE'
-    //   }); 
-   
-    //   console.log(url);
-    // console.log(req.oidc);
-    // res.send(req.oidc.isAuthenticated() ? 'Logged in' : 'Logged out');
-    
-}) 
 
 
 router.post('/activate', (req, res, next) => {
