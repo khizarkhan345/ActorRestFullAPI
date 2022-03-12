@@ -4,8 +4,9 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const json3 = require('json3');
 const fs = require('fs');
-
-
+const app = require('../firebase/firebase');
+const { v4: uuidv4 } = require('uuid');
+const { getStorage, ref, uploadBytes } = require("firebase/storage");
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb){
@@ -76,7 +77,7 @@ router.get('/', (req, res, next) => {
     .exec()
     .then(result => {
         
-            const response = {
+            var response = {
                 count: result.length,
                  movie:  result.map(res => {
                     return {
@@ -90,15 +91,31 @@ router.get('/', (req, res, next) => {
                         }),
                         rating: res.Rating,
                         _id: res._id,
-                        request: { 
-                            type: 'GET',
-                            url: 'http://localhost:3000/movies/' + res._id
-                        }
                     }
                 })
 
             }
-            res.status(201).json(response)
+            const page = req.query.page;
+            const limit = req.query.limit;
+           
+
+            const startIndex = (page-1)*limit;
+            const endIndex = (page)*limit;
+
+            response = [response];
+            var results = {};
+            
+            console.log(response[0].movie.length)
+            if(startIndex > response[0].movie.length){
+             return  res.status(401).json({
+                    message: "Page number is greater than number of records"
+                })
+            }
+           
+           
+            results = response[0].movie.slice(startIndex, endIndex);
+            res.render('movies', {response: response});
+            //res.status(201).json(results);
         })
         .catch(err => {
             console.log(err)
@@ -109,7 +126,8 @@ router.get('/', (req, res, next) => {
 });
 
 router.post('/', upload.any('movieImage'), (req, res, next) => {
-    console.log(req.files[0].path); 
+    console.log(req.files[0].path);
+    console.log(req.body.actorID); 
     actor = JSON.parse(req.body.actorID);
     actor.map(result => { 
         console.log(result)
@@ -120,6 +138,39 @@ router.post('/', upload.any('movieImage'), (req, res, next) => {
                         message: "Actor Not Found"
                     })
                 }
+                console.log(req.files);
+
+                //const storage = getStorage(firebase);
+
+                //const mountainsRef = ref(storage, req.files[0].originalname);
+
+                // const storageRef = app.storage().ref('/movieImage'+ req.files[0].originalname);
+
+                // uploadBytes(storageRef, req.files[0].buffer, {
+                //          contentType: req.files[0].mimetype
+                //        }).then((snapshot) => {
+                //     console.log('Uploaded a blob or file!');
+                //   });
+                //   storageRef.put(req.files[0].buffer, {
+                //     contentType: req.files[0].mimetype
+                //   })
+                //   .then((result) => {
+                //      console.log("Picture uploaded to firebase");
+                //   })
+                  
+                const storageRef = app.storage().bucket(`gs://moviedb-e8ee9.appspot.com`);
+
+                storageRef.upload(`${req.files[0].path}`, {
+                    public: true,
+                    destination: `/uploads/movieImages/${req.files[0].originalname}`,
+                    metadata: {
+                        firebaseStorageDownloadTokens: uuidv4(),
+                    }
+                })
+                .then((result) => {
+                    console.log("File uploaded");
+                })
+
                 const movie = new Movie({
                     _id: mongoose.Types.ObjectId(),
                     name: req.body.name,

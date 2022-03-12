@@ -3,13 +3,30 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const mongoose = require("mongoose");
 const formidable = require('express-formidable');
+const { auth } = require('express-openid-connect');
+const {engine} = require('express-handlebars');
+const path = require('path');
 const app = express();
+const dotenv = require('dotenv');
+dotenv.config();
+ 
 const actorRoutes = require('./api/routes/actors');
 const movieRoutes = require('./api/routes/movies');
 const userRoutes = require('./api/routes/users');
 
-mongoose.connect("mongodb+srv://khizar123:england123@api-mongodb.88z8c.mongodb.net/myFirstDatabase?retryWrites=true&w=majority" 
-);
+console.log("mongodb+srv://khizar123:"+process.env.MONGODB_PASSWORD+"@api-mongodb.88z8c.mongodb.net/myFirstDatabase?retryWrites=true&w=majority");
+
+let connection = mongoose.connect("mongodb+srv://khizar123:"+process.env.MONGODB_PASSWORD+"@api-mongodb.88z8c.mongodb.net/myFirstDatabase?retryWrites=true&w=majority" 
+); 
+ 
+app.engine('handlebars', engine());
+app.set('view engine', 'handlebars');
+app.set('views', path.join(__dirname, '/views'));
+
+//app.set('views', path.join(__dirname, 'views'));
+//app.set('view engine', 'hbs');
+//app.engine('hbs', hbs({extname: 'hbs', defaultLayout: 'layout', layoutsDir: __dirname + '/views/layouts/'}));
+
 
 app.use(morgan('dev'));
 app.use('/uploads', express.static('uploads'));
@@ -18,6 +35,17 @@ app.use(bodyParser.urlencoded({extended: false}));
 //app.use(formidable());
 app.use(bodyParser.json());
 
+const config = {
+    authRequired: false,
+    auth0Logout: true,
+    secret: 'TnS4MbRUSHhlclBUk0s7niqP9zlaXFGJDBORSIF4RHc6U-_uQUq-HkxSPuks2NOR',
+    baseURL: 'http://localhost:3000',
+    clientID: 'DmwMeGcpEIBFEWOpMlAkGw9jeT2lmsCV',
+    issuerBaseURL: 'https://dev-4h1xk-tf.us.auth0.com'
+  };
+  
+  // auth router attaches /login, /logout, and /callback routes to the baseURL
+app.use(auth(config));
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*")
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Authorization");

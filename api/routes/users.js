@@ -6,13 +6,19 @@ const jwt = require('jsonwebtoken');
 const lodash = require('lodash');
 const mailgun = require("mailgun-js");
 const nodeMailer = require('nodemailer');
-
+const auth0 = require('auth0');
+const dotenv = require('dotenv');
+dotenv.config();
 
 const Movie = require('../models/movie');
 const Actor = require('../models/actor');
 const User = require('../models/user');
 const { appendFile } = require('fs');
 
+router.get('/hbs', (req, res) => {
+    // res.render('index', {title: "Node JS"})
+    res.render('login');
+});
 router.post('/signup', (req, res, next) => {
     // User.find({email: req.body.email})
     // .then(user => {
@@ -21,8 +27,8 @@ router.post('/signup', (req, res, next) => {
     //             message: 'User exists'
     //         })
     //     }else{
-
-            const token = jwt.sign({name: req.body.name, email: req.body.email, password: req.body.password, phoneNO: req.body.phoneNo}, 'secret', {expiresIn: "20m"})
+        // async function main() {
+            const token = jwt.sign({name: req.body.name, email: req.body.email, password: req.body.password, phoneNO: req.body.phoneNo}, process.env.SECRET_KEY, {expiresIn: "20m"})
 
             // const data = {
             //     from: "noreply@test.com",
@@ -42,37 +48,48 @@ router.post('/signup', (req, res, next) => {
             //     console.log(body);
             // });
             
-            let testAccount = await nodeMailer.createTestAccount();
-            console.log(testAccount);
-            let data = {
-                from: '"Fred Foo 👻" <foo@example.com>', // sender address
-                  to: req.body.email, // list of receivers
-                subject: "Hello ✔", // Subject line
-                text: "Hello world?", // plain text body
-                html: "<b>Hello world?</b>", // html body
-               }
+            //let testAccount = await nodeMailer.createTestAccount();
+            //console.log(testAccount);
+            
   // create reusable transporter object using the default SMTP transport
-           let transporter = nodeMailer.createTransport({
-               host: "smtp.ethereal.email",
-               port: 587,
-              secure: false, // true for 465, false for other ports
+           let transporter =  nodeMailer.createTransport({
+               host: "smtp.gmail.com",
+               port: 465,
+               secure: true,
+               
+              //secure: false, // true for 465, false for other ports
              auth: {
-                 user: testAccount.user, // generated ethereal user
-                 pass: testAccount.pass, // generated ethereal password
+                 user: 'khankhizar98018@gmail.com', // generated ethereal user
+                 pass: 'england345#', // generated ethereal password
            },
         });
+         console.log(transporter);
+         let data = {
+            from: "khankhizar98018@gmail.com", // sender address
+              to: req.body.email, // list of receivers
+            subject: "Hello ✔", // Subject line
+            text: "Hello world?", // plain text body
+            html:  `<h2>Kindly, click on the following link to activate your account</h2>
+                  <a>http://localhost:3000/users/activate/${token}</a>,` 
+           }
 
-  // send mail with defined transport object
-             transporter.sendMail(data, function (error, body) {
-                    if(error){
-                        console.log(error);
-                        return res.json({error: error})
-                    }else{
-                        return res.json({message: "Email has been sent to client. Kindly, verify it"});
-                    }
-                    console.log(body);
-                });
+             let info = transporter.sendMail(data, (err, response) => {
+                 if(err){
+                     console.log("error occured", err);
+                     return res.status(400).json({
+                         msg: "Unable to sent message"
+                     });
+                 }
 
+                 return res.json({message: "Email has been sent to client. Kindly, verify it"});
+                 
+                 
+                 
+             });
+               
+            //}
+
+            //main().catch(console.log("Main error occurred", error));
                  
             // bcrypt.hash(req.body.password, 10, (err, hash) => {
             //     if(err) {
@@ -107,6 +124,7 @@ router.post('/signup', (req, res, next) => {
 });
   // Login request
   router.post('/login', (req, res, next) => {
+      
       User.find({email: req.body.email})
       .then(user => {
          if(user.length < 1){
@@ -125,7 +143,7 @@ router.post('/signup', (req, res, next) => {
                      email: user[0].email,
                      id: user[0]._id
                  },
-                 'secret',
+                 process.env.SECRET_KEY,
                  {
                      expiresIn: "1h"
                  }
@@ -147,11 +165,35 @@ router.post('/signup', (req, res, next) => {
       })
   });
 
+router.post('/userlogin', (req, res) => {
+    
+    // var webAuth = new auth0.WebAuth({
+    //     domain:       'dev-4h1xk-tf.us.auth0.com',
+    //     clientID:     'DmwMeGcpEIBFEWOpMlAkGw9jeT2lmsCV'
+    //   });
+    
+    //   // Calculate URL to redirect to
+    //   var url = webAuth.client.buildAuthorizeUrl({
+    //     clientID: 'DmwMeGcpEIBFEWOpMlAkGw9jeT2lmsCV', // string
+    //     responseType: 'token', // code or token
+    //     connection: User,
+    //     redirectUri: 'undefined',
+    //     scope: 'openid profile email',
+    //     //state: 'YOUR_STATE'
+    //   }); 
+   
+    //   console.log(url);
+    // console.log(req.oidc);
+    // res.send(req.oidc.isAuthenticated() ? 'Logged in' : 'Logged out');
+    
+}) 
+
+
 router.post('/activate', (req, res, next) => {
     const token = req.body.token;
     console.log(token);
     if(token){
-        jwt.verify(token, 'secret', (err, decodedToken) => {
+        jwt.verify(token, process.env.SECRET_KEY, (err, decodedToken) => {
             console.log(err);
             if(err){
                 return res.status(400).json("Incorrect or expired link");
@@ -218,10 +260,10 @@ router.put('/forgot-password', (req, res, next) => {
                 message: "User does not exist"
             })
         }
-        const token = jwt.sign({_id: user._id}, 'secret', {expiresIn: "20m"})
+        const token = jwt.sign({_id: user._id}, process.env.SECRET_KEY, {expiresIn: "20m"})
 
         const data = {
-            from: "noreply@test.com",
+            from: "khankhizar98018@gmail.com",
             to: req.body.email,
             subject: "Password Reset Link",
             html: `
@@ -230,15 +272,33 @@ router.put('/forgot-password', (req, res, next) => {
             `
         };
 
+        let transporter =  nodeMailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
+            
+           //secure: false, // true for 465, false for other ports
+          auth: {
+              user: 'khankhizar98018@gmail.com', // generated ethereal user
+              pass: 'england345#', // generated ethereal password
+        },
+     });
+      
+      
+           
+
         return user.updateOne({resetLink: token})
          .then((result) => {
-            mg.messages().send(data, function (error, body) {
-                if(error){
-                    return res.json({error: err})
-                }else{
-                    return res.json({message: "Email has been sent to you. Kindly, follow the instructions"});
+            transporter.sendMail(data, (err, response) => {
+                if(err){
+                    console.log("error occured", err);
+                    return res.status(400).json({
+                        msg: "Unable to sent message"
+                    });
                 }
-                //console.log(body);
+  
+                return res.json({message: "Email has been sent to client. Kindly, follow the instructions"});
+                      
             });
         })
         .catch((err) => {
@@ -260,7 +320,7 @@ router.put('/forgot-password', (req, res, next) => {
 
 router.put('/reset-password', (req, res, next) => {
     if(req.body.resetLink){
-       jwt.verify(req.body.resetLink, 'secret', (error, decodedToken) => {
+       jwt.verify(req.body.resetLink, process.env.SECRET_KEY, (error, decodedToken) => {
            if(error){
                res.status(401).json({
                    err: "Incorrect token or it is expired!"
@@ -304,7 +364,7 @@ router.put('/reset-password', (req, res, next) => {
            })
        })
     }else{
-        console.log(err);
+        //console.log(err);
         res.status(401).json({
             message: "Authentication Error!"
         })
